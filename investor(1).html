@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<meta name="theme-color" content="#0B1F1C" />
+<title>بوابة المستثمر — المضاربة</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #0B1F1C;
+  --card: #132E29;
+  --card-2: #17362F;
+  --text: #EAF2EF;
+  --muted: #8FA8A2;
+  --mint: #3ECF8E;
+  --mint-dark: #2BA36D;
+  --amber: #F2A65A;
+  --red: #E85D5D;
+  --border: #1E4038;
+  --radius: 14px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif; min-height: 100vh;
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 6px 0; }
+h3 { margin: 18px 0 8px; }
+.muted { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.card {
+  background: linear-gradient(160deg, var(--card), var(--card-2));
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; min-width: 0;
+}
+.card span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.card b { font-size: 16px; color: var(--amber); overflow-wrap: break-word; }
+.card.pos b { color: var(--mint) !important; }
+.card.neg b { color: var(--red) !important; }
+.note {
+  background: rgba(242, 166, 90, .08); border: 1px solid rgba(242, 166, 90, .35);
+  border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.7; margin: 12px 0;
+}
+.btn {
+  background: var(--card-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { border-color: var(--mint); }
+.btn.primary { background: linear-gradient(135deg, var(--mint), var(--mint-dark)); color: #06231A; border: none; width: 100%; }
+.btn.danger { background: linear-gradient(135deg, #F17575, var(--red)); color: #fff; border: none; }
+.btn.sm { padding: 5px 10px; font-size: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-wrap table { min-width: 600px; width: 100%; border-collapse: collapse; }
+th, td { border-bottom: 1px solid var(--border); padding: 8px; text-align: right; font-size: 13px; }
+th { color: var(--muted); font-size: 12px; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover { background: var(--card-2); }
+.positive { color: var(--mint); }
+.negative { color: var(--red); }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 14px; }
+.kv div { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding: 5px 0; }
+.kv span { color: var(--muted); }
+.form { display: grid; gap: 10px; }
+.form label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.form input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  border-radius: 10px; padding: 11px 12px; font-size: 15px; font-family: inherit;
+}
+.login-box { max-width: 420px; margin: 30px auto 0; }
+.greeting { font-size: 20px; font-weight: 800; color: var(--mint); margin: 4px 0 12px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.badge.open { background: rgba(62, 207, 142, .15); color: var(--mint); }
+.badge.pending { background: rgba(242, 166, 90, .15); color: var(--amber); }
+.badge.closed { background: rgba(232, 93, 93, .15); color: var(--red); }
+.chart-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 10px 0; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000;
+  display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+.modal-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  width: 100%; max-width: 560px; padding: 18px; margin: auto; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+@media (max-width: 640px) {
+  .kv { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================================
+   بوابة المستثمر المستقلة — تقرأ بيانات المضاربة (md_*) نفسها المخزنة محليًا
+   على نفس النطاق الذي يعمل عليه تطبيق المتجر. صفحة قراءة فقط بالكامل:
+   لا تعدّل ولا تكتب أي بيانات، ولا تصل لبيانات المتجر العادية إطلاقًا.
+   ========================================================================== */
+(function () {
+"use strict";
+
+const MK = {
+  investors: "md_investors", partnerships: "md_partnerships",
+  purchases: "md_mud_purchases", sales: "md_mud_sales", expenses: "md_mud_expenses",
+  ledger: "md_mud_ledger", periods: "md_mud_periods",
+  settlements: "md_mud_settlements", meta: "md_meta",
+};
+const read = (k) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : []; } catch (e) { return []; } };
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+const esc = (s) => (s == null ? "" : String(s)).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtD = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? esc(d) : x.toLocaleDateString("ar-MA"); };
+const fmt = (num) => (Math.round((Number(num) || 0) * 100) / 100).toLocaleString("ar-MA");
+const fM = (n) => fmt(n) + " د.م";
+const norm = (s) => (s || "").toString().trim().toLowerCase();
+// نفس دالة التجزئة المستخدمة في التطبيق الرئيسي (Storage._hash)
+function hashPin(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return "h" + hash.toString();
+}
+
+const LT = {
+  INITIAL_CAPITAL: "إيداع رأس مال", PURCHASE_OF_GOODS: "شراء بضاعة",
+  SALE_OF_GOODS: "بيع بضاعة", REALIZED_PROFIT: "ربح محقق", LOSS: "خسارة",
+  MUDARABA_EXPENSE: "مصروف متعلق بالمضاربة", ADVANCE_PROFIT: "دفعة تحت الحساب",
+  PROFIT_DISTRIBUTION: "توزيع ربح", SETTLEMENT: "تسوية",
+  REINVESTMENT: "إعادة استثمار", CAPITAL_WITHDRAWAL: "سحب رأس مال",
+  PERIOD_CLOSING: "إغلاق دورة محاسبة", LIQUIDATION: "تصفية نهائية",
+  REVERSAL: "عكس قيد (تصحيح)",
+};
+
+const DB = {
+  investors: () => read(MK.investors),
+  partnerships: () => read(MK.partnerships),
+  purchases: () => read(MK.purchases),
+  sales: () => read(MK.sales),
+  expenses: () => read(MK.expenses),
+  ledger: () => read(MK.ledger),
+  periods: () => read(MK.periods),
+  settlements: () => read(MK.settlements),
+  meta: () => { try { return JSON.parse(localStorage.getItem(MK.meta)) || {}; } catch (e) { return {}; } },
+  inv: (id) => DB.investors().find((x) => x.id === id) || null,
+};
+
+/* نفس محرك الحسابات في التطبيق الرئيسي (نسخة قراءة فقط) */
+const Engine = {
+  compute({ partnership, purchases, sales, expenses, ledger }) {
+    const P = partnership, L = ledger || [];
+    const sum = (arr, f) => round2(arr.reduce((s, x) => s + (f ? f(x) : x), 0));
+    const purchasesTotal = sum(purchases, (x) => x.totalCost);
+    const salesTotal = sum(sales, (x) => x.total);
+    const cogs = sum(sales, (x) => x.cogs);
+    const expensesTotal = sum(expenses, (x) => x.amount);
+    const gross = round2(salesTotal - cogs);
+    const net = round2(gross - expensesTotal);
+    const investorProfit = round2(net * (P.investorShare || 0) / 100);
+    const traderProfit = round2(net * (P.traderProfitShare || 0) / 100);
+    const byType = (t) => sum(L.filter((e) => e.type === t && !e.voided), (e) => e.amount);
+    const advances = byType("ADVANCE_PROFIT");
+    const distributed = byType("PROFIT_DISTRIBUTION");
+    const settled = byType("SETTLEMENT");
+    const withdrawals = byType("CAPITAL_WITHDRAWAL");
+    const reinvested = byType("REINVESTMENT");
+    const capitalIn = round2((P.initialCapital || 0) + reinvested - withdrawals);
+    const payouts = round2(advances + distributed + settled + withdrawals);
+    const cash = round2(capitalIn + salesTotal - purchasesTotal - expensesTotal - payouts);
+    const inventoryCost = round2(purchases.filter((b) => b.partnershipId === P.id)
+      .reduce((s, b) => s + round2((b.qty - (b.sold || 0)) * b.unitCost), 0));
+    return {
+      purchasesTotal, salesTotal, cogs, expensesTotal, gross, net,
+      investorProfit, traderProfit, advances, distributed, settled,
+      capitalIn, cash, inventoryCost, dueToInvestor: round2(investorProfit - advances),
+    };
+  },
+  forPartnership(pid) {
+    const P = DB.partnerships().find((x) => x.id === pid); if (!P) return null;
+    return Engine.compute({
+      partnership: P,
+      purchases: DB.purchases().filter((x) => x.partnershipId === pid),
+      sales: DB.sales().filter((x) => x.partnershipId === pid),
+      expenses: DB.expenses().filter((x) => x.partnershipId === pid),
+      ledger: DB.ledger().filter((x) => x.partnershipId === pid),
+    });
+  },
+  investorView(iid) {
+    const parts = DB.partnerships().filter((p) => p.investorId === iid);
+    const agg = { capital: 0, cash: 0, inventoryCost: 0, sales: 0, net: 0, investorProfit: 0, distributed: 0, advances: 0, settled: 0, due: 0, open: 0 };
+    parts.forEach((p) => {
+      const r = Engine.forPartnership(p.id); if (!r) return;
+      agg.capital = round2(agg.capital + r.capitalIn);
+      agg.cash = round2(agg.cash + r.cash);
+      agg.inventoryCost = round2(agg.inventoryCost + r.inventoryCost);
+      agg.sales = round2(agg.sales + r.salesTotal);
+      agg.net = round2(agg.net + r.net);
+      agg.investorProfit = round2(agg.investorProfit + r.investorProfit);
+      agg.distributed = round2(agg.distributed + r.distributed);
+      agg.advances = round2(agg.advances + r.advances);
+      agg.settled = round2(agg.settled + r.settled);
+      agg.due = round2(agg.due + r.dueToInvestor);
+      if (p.status === "OPEN") agg.open++;
+    });
+    return agg;
+  },
+};
+
+/* ---------------- الجلسة ---------------- */
+const SESS_KEY = "md_portal_sess";
+const getSession = () => { try { return JSON.parse(sessionStorage.getItem(SESS_KEY)) || null; } catch (e) { return null; } };
+const setSession = (s) => { if (s) sessionStorage.setItem(SESS_KEY, JSON.stringify(s)); else sessionStorage.removeItem(SESS_KEY); };
+
+function toast(msg, type) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;bottom:20px;right:50%;transform:translateX(50%);z-index:2000;" +
+    "padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;color:#06231A;" +
+    "background:" + (type === "error" ? "var(--red);color:#fff" : "var(--mint)") + ";box-shadow:var(--shadow)";
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function modal(html) {
+  const m = document.createElement("div");
+  m.className = "modal";
+  m.innerHTML = '<div class="modal-box">' + html + '<div class="row" style="justify-content:flex-end"><button class="btn" id="mClose">إغلاق</button></div></div>';
+  m.addEventListener("click", (e) => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
+  document.getElementById("mClose").onclick = () => m.remove();
+}
+
+/* ---------------- رسوم SVG ---------------- */
+function bars(values, labels) {
+  const w = 560, h = 160;
+  if (!values.length) return '<p class="muted">لا توجد بيانات بعد.</p>';
+  const max = Math.max.apply(null, values.map(Math.abs).concat([1]));
+  const bw = w / values.length;
+  return '<svg viewBox="0 0 ' + w + " " + (h + 30) + '" style="width:100%;height:auto">' +
+    values.map((v, i) => {
+      const bh = Math.max(2, (Math.abs(v) / max) * (h - 30));
+      const y = v >= 0 ? h - 20 - bh : h - 20;
+      return '<rect x="' + (i * bw + bw * 0.15) + '" y="' + y + '" width="' + bw * 0.7 + '" height="' + bh + '" rx="3" fill="' + (v >= 0 ? "#3ECF8E" : "#E85D5D") + '"></rect>' +
+        '<text x="' + (i * bw + bw / 2) + '" y="' + (h - 6) + '" font-size="10" fill="#8FA8A2" text-anchor="middle">' + esc(labels[i] || "") + "</text>" +
+        '<text x="' + (i * bw + bw / 2) + '" y="' + (v >= 0 ? y - 4 : y + bh + 12) + '" font-size="10" fill="#EAF2EF" text-anchor="middle">' + fmt(v) + "</text>";
+    }).join("") + "</svg>";
+}
+function line(points, labels) {
+  const w = 560, h = 160;
+  if (points.length < 2) return '<p class="muted">لا توجد بيانات كافية بعد.</p>';
+  const max = Math.max.apply(null, points.concat([1])), min = Math.min.apply(null, points.concat([0]));
+  const sx = (i) => 30 + (i / (points.length - 1)) * (w - 40);
+  const sy = (v) => h - 20 - ((v - min) / (max - min || 1)) * (h - 40);
+  return '<svg viewBox="0 0 ' + w + " " + (h + 30) + '" style="width:100%;height:auto">' +
+    '<polyline fill="none" stroke="#F2A65A" stroke-width="2.5" points="' + points.map((v, i) => sx(i) + "," + sy(v)).join(" ") + '"></polyline>' +
+    points.map((v, i) => '<circle cx="' + sx(i) + '" cy="' + sy(v) + '" r="3.5" fill="#F2A65A"></circle>' +
+      '<text x="' + sx(i) + '" y="' + (h + 12) + '" font-size="10" fill="#8FA8A2" text-anchor="middle">' + esc(labels[i] || "") + "</text>").join("") + "</svg>";
+}
+
+/* ---------------- مخرجات التقارير ---------------- */
+function pdfOf(el, filename) {
+  if (!window.html2canvas || !window.jspdf) { toast("مكتبات PDF غير محمّلة — تحقق من الاتصال", "error"); return; }
+  html2canvas(el, { scale: 2, backgroundColor: "#0B1F1C" }).then((canvas) => {
+    const img = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pw = 210, ih = (canvas.height * pw) / canvas.width;
+    let pos = 0, page = 0;
+    while (pos < ih) { if (page > 0) pdf.addPage(); pdf.addImage(img, "PNG", 0, -pos, pw, ih); pos += 297; page++; }
+    pdf.save(filename);
+  });
+}
+function excelOf(rows, sheetName, filename) {
+  if (!window.XLSX) { toast("مكتبة Excel غير محمّلة", "error"); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = Object.keys(rows[0] || { a: 1 }).map(() => ({ wch: 20 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
+}
+function printHtml(html) {
+  const w = window.open("", "_blank");
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقريري</title>' +
+    '<style>body{font-family:Tahoma,Arial;padding:20px;color:#111}table{border-collapse:collapse;width:100%;margin:10px 0}td,th{border:1px solid #999;padding:6px;font-size:13px}h2{margin-bottom:4px}</style>' +
+    "</head><body>" + html + "<script>window.print()<\/script></body></html>");
+  w.document.close();
+}
+
+/* ---------------- العرض: شاشة الدخول ---------------- */
+function renderLogin(err) {
+  document.getElementById("app").innerHTML = `
+    <h1>👤 بوابة المستثمر</h1>
+    <p class="muted">منطقة مستقلة لمتابعة رأس مالك وأرباحك وعملياتك — دون رؤية أي بيانات من المتجر.</p>
+    ${DB.investors().length ? "" : '<div class="note">⚠️ لا توجد بيانات مستثمرين على هذا الجهاز/المتصفح. يجب فتح هذه الصفحة من نفس المتصفح والنطاق الذي يعمل عليه تطبيق المتجر حتى تظهر بياناتك.</div>'}
+    <div class="card login-box">
+      <form id="loginForm" class="form">
+        <div><label>رمز المستثمر (مثال: INV-1)</label><input id="lgCode" autocomplete="off" required placeholder="INV-1"></div>
+        <div><label>PIN</label><input id="lgPin" type="password" inputmode="numeric" required></div>
+        <button class="btn primary" type="submit">دخول</button>
+      </form>
+      ${err ? '<p class="negative" style="font-size:13px">' + esc(err) + "</p>" : ""}
+    </div>
+    <p class="muted" style="margin-top:20px">🔒 كل الأرقام محسوبة من سجل العمليات المحاسبي (Ledger) للمضاربة فقط.</p>`;
+  document.getElementById("loginForm").onsubmit = (e) => {
+    e.preventDefault();
+    const code = document.getElementById("lgCode").value.trim();
+    const pin = document.getElementById("lgPin").value;
+    const inv = DB.investors().find((i) => norm(i.code) === norm(code));
+    if (!inv) return renderLogin("رمز المستثمر غير موجود.");
+    if (!inv.pinHash) return renderLogin("هذا الحساب ليس له PIN — اطلب من التاجر تفعيله من قسم المستثمرين.");
+    if (inv.pinHash !== hashPin(pin)) return renderLogin("PIN غير صحيح.");
+    setSession({ investorId: inv.id, name: inv.name, at: Date.now() });
+    toast("مرحبًا " + inv.name, "success");
+    render();
+  };
+}
+
+/* ---------------- العرض: لوحة المستثمر ---------------- */
+function render() {
+  const sess = getSession();
+  if (!sess) return renderLogin();
+  const inv = DB.inv(sess.investorId);
+  if (!inv) { setSession(null); return renderLogin(); }
+
+  const a = Engine.investorView(inv.id);
+  const parts = DB.partnerships().filter((p) => p.investorId === inv.id);
+  const myLed = DB.ledger().filter((e) => parts.some((p) => p.id === e.partnershipId))
+    .sort((x, y) => new Date(x.createdAt) - new Date(y.createdAt));
+  let bal = 0;
+  const rows = myLed.slice(-300).map((e) => {
+    bal = round2(bal + e.amount);
+    return '<tr class="clickable" data-led="' + e.id + '"><td>' + fmtD(e.createdAt) + "</td><td>" + (LT[e.type] || esc(e.type)) + "</td><td>" + esc(e.description) + "</td>" +
+      '<td class="' + (e.amount >= 0 ? "positive" : "negative") + '">' + (e.amount >= 0 ? "+" : "−") + fM(Math.abs(e.amount)) + "</td><td>" + fM(bal) + "</td></tr>";
+  }).reverse().join("");
+
+  const monthly = {};
+  DB.sales().filter((s) => parts.some((p) => p.id === s.partnershipId)).forEach((s) => {
+    const k = (s.date || "").slice(0, 7); if (!k) return;
+    monthly[k] = monthly[k] || 0;
+    monthly[k] = round2(monthly[k] + s.profit);
+  });
+  const keys = Object.keys(monthly).sort();
+  const cum = []; let run = a.capital;
+  keys.forEach((k) => { run = round2(run + monthly[k]); cum.push(run); });
+
+  const lastStl = DB.settlements().filter((s) => s.investorId === inv.id).slice(-1)[0];
+  const meta = DB.meta();
+  const card = (label, val, cls) => '<div class="card ' + (cls || "") + '"><span>' + label + "</span><b>" + val + "</b></div>";
+  const badge = (st) => st === "OPEN" ? '<span class="badge open">مفتوحة</span>' :
+    st === "PENDING" ? '<span class="badge pending">في انتظار التصفية</span>' :
+    '<span class="badge closed">مغلقة/مصفّاة</span>';
+
+  const reportRows = [
+    ["المستثمر", inv.name],
+    ["رقم المستثمر", inv.code],
+    ["رأس المال الحالي", fM(a.capital)],
+    ["إجمالي المبيعات", fM(a.sales)],
+    ["الربح المحقق (حصتك)", fM(a.investorProfit)],
+    ["الخسائر", fM(Math.max(0, -a.net))],
+    ["أرباح موزعة", fM(a.distributed)],
+    ["أرباح تحت الحساب", fM(a.advances)],
+    ["المستحق بعد التسوية", fM(a.due)],
+    ["قيمة المخزون المرتبط", fM(a.inventoryCost)],
+    ["النقد في الدورات", fM(a.cash)],
+    ["تاريخ التقرير", new Date().toLocaleString("ar-MA")],
+  ];
+
+  document.getElementById("app").innerHTML = `
+    <div class="topbar">
+      <span class="muted">${esc(inv.code)}</span>
+      <button class="btn sm danger" id="logoutBtn">🚪 خروج</button>
+    </div>
+    <div class="greeting">مرحبًا، ${esc(inv.name)} 👋</div>
+
+    <div class="grid">
+      ${card("💰 رأس المال", fM(a.capital))}
+      ${card("📈 الربح المحقق (حصتك)", fM(a.investorProfit), a.investorProfit >= 0 ? "pos" : "neg")}
+      ${card("💵 الأرباح الموزعة", fM(a.distributed))}
+      ${card("⏳ أرباح تحت الحساب", fM(a.advances))}
+      ${card("🧾 المستحق بعد التسوية", fM(a.due), a.due >= 0 ? "pos" : "neg")}
+      ${card("📦 قيمة المخزون المرتبط", fM(a.inventoryCost))}
+      ${card("🏦 النقد في الدورات", fM(a.cash))}
+      ${card("📊 نتيجة الدورات", fM(a.net), a.net >= 0 ? "pos" : "neg")}
+    </div>
+
+    ${lastStl ? `<div class="note">🧾 آخر تسوية (${fmtD(lastStl.date)}): المستحق النهائي ${fM(lastStl.investorProfit)} — المدفوع سابقًا ${fM(lastStl.paidBefore)} — ${lastStl.status === "تمت التسوية" ? "✅ تمت التسوية" : "المتبقي " + fM(lastStl.after)}</div>` : ""}
+
+    <div class="chart-box"><b>📈 قيمة الاستثمار عبر الزمن (رأس المال + الربح المتراكم الفعلي)</b>${line(cum, keys)}</div>
+    <div class="chart-box"><b>📊 الربح الشهري المحقق (من العمليات الفعلية)</b>${bars(keys.map((k) => monthly[k]), keys)}</div>
+
+    <h3>استثماري</h3>
+    <div class="grid">
+      ${card("رأس المال الأولي", fM(parts.reduce((s, p) => s + p.initialCapital, 0)))}
+      ${card("إجمالي الأرباح", fM(Math.max(0, a.investorProfit)), "pos")}
+      ${card("إجمالي الخسائر", fM(Math.max(0, -a.net)))}
+      ${card("تاريخ بداية الاستثمار", fmtD(inv.startDate))}
+      ${card("تاريخ آخر جرد", meta.lastInventoryAt ? fmtD(meta.lastInventoryAt) : "—")}
+      ${card("تاريخ آخر تسوية", lastStl ? fmtD(lastStl.date) : "—")}
+    </div>
+
+    <h3>دوراتي</h3>
+    <div class="table-wrap"><table><thead><tr><th>الدورة</th><th>رأس المال</th><th>نسبتك</th><th>البدء</th><th>الحالة</th></tr></thead>
+    <tbody>${parts.map((p) => "<tr><td>" + esc(p.desc || p.id.slice(-6)) + "</td><td>" + fM(p.initialCapital) + "</td><td>" + p.investorShare + "%</td><td>" + fmtD(p.startDate) + "</td><td>" + badge(p.status) + "</td></tr>").join("") || '<tr><td colspan="5" class="muted">لا دورات بعد.</td></tr>'}</tbody></table></div>
+
+    <h3>سجل العمليات</h3>
+    <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>نوع العملية</th><th>الوصف</th><th>المبلغ</th><th>الرصيد</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" class="muted">لا عمليات بعد.</td></tr>'}</tbody></table></div>
+
+    <h3>تقريري</h3>
+    <div id="reportBox" class="card" style="padding:18px">
+      <h3 style="margin-top:0">🤝 تقرير المستثمر — ${esc(inv.name)}</h3>
+      <div class="kv">${reportRows.map((x) => "<div><span>" + x[0] + "</span><b>" + x[1] + "</b></div>").join("")}</div>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnPdf">📄 PDF</button>
+      <button class="btn" id="btnExcel">📊 Excel</button>
+      <button class="btn" id="btnWa">📱 مشاركة WhatsApp</button>
+      <button class="btn" id="btnPrint">🖨️ طباعة</button>
+    </div>
+    <p class="muted" style="margin-top:16px">💡 هذه الصفحة للعرض فقط — لا تستطيع تعديل أي بيانات. الأرقام تتحدث تلقائيًا عند تحديث التاجر للبيانات على نفس الجهاز.</p>`;
+
+  document.getElementById("logoutBtn").onclick = () => { setSession(null); renderLogin(); };
+  document.querySelectorAll("[data-led]").forEach((tr) => {
+    tr.onclick = () => {
+      const e = DB.ledger().find((x) => x.id === tr.dataset.led);
+      if (!e) return;
+      modal(`<h3>🧾 تفاصيل العملية</h3><div class="kv">
+        <div><span>النوع</span><b>${LT[e.type] || esc(e.type)}</b></div>
+        <div><span>المبلغ</span><b>${fM(e.amount)}</b></div>
+        <div><span>التاريخ</span><b>${fmtD(e.createdAt)} ${new Date(e.createdAt).toLocaleTimeString("ar-MA")}</b></div>
+        <div><span>الحالة</span><b>${e.voided ? "ملغى بقيد عكسي" : "فعّال"}</b></div></div>
+        <p>${esc(e.description)}</p>`);
+    };
+  });
+  document.getElementById("btnPdf").onclick = () => pdfOf(document.getElementById("reportBox"), "investor-report.pdf");
+  document.getElementById("btnPrint").onclick = () => printHtml(document.getElementById("reportBox").innerHTML);
+  document.getElementById("btnExcel").onclick = () => {
+    const rowsX = DB.sales().filter((s) => parts.some((p) => p.id === s.partnershipId)).map((s) => ({
+      التاريخ: fmtD(s.date), المنتج: s.productName, الكمية: s.qty, "سعر البيع": s.unitPrice,
+      الإجمالي: s.total, التكلفة: s.cogs, الربح: s.profit,
+    }));
+    excelOf(rowsX.length ? rowsX : [{ ملاحظة: "لا مبيعات مسجلة بعد" }], "استثماري", "investor-sales.xlsx");
+  };
+  document.getElementById("btnWa").onclick = () => {
+    window.open("https://wa.me/?text=" + encodeURIComponent(
+      "👤 تقرير المستثمر — " + inv.name + "\n" +
+      "رأس المال: " + fM(a.capital) + "\nالربح المحقق (حصتي): " + fM(a.investorProfit) +
+      "\nالموزع: " + fM(a.distributed) + "\nتحت الحساب: " + fM(a.advances) +
+      "\nالمستحق: " + fM(a.due) + "\nالمخزون: " + fM(a.inventoryCost) +
+      "\n\n— من بوابة المستثمر"
+    ), "_blank");
+  };
+}
+
+/* تحديث تلقائي عند تغيير البيانات في تبويب المتجر الآخر على نفس الجهاز */
+window.addEventListener("storage", () => { if (getSession()) render(); });
+
+render();
+})();
+</script>
+</body>
+</html>
